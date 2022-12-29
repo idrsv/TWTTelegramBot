@@ -1,5 +1,6 @@
 package com.idrsv.TWT_MPEI_Bot.service;
 
+import com.idrsv.TWT_MPEI_Bot.constants.PathEnum;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,11 +19,6 @@ import java.util.*;
 
 @Component
 public class TWTService {
-
-    private static final String path1 = "http://twt.mpei.ru/mcs/Worksheets/rbtpp/tab1.xmcd";
-    private static final String path2 = "http://twt.mpei.ru/mcs/Worksheets/rbtpp/tab2.xmcd";
-//    private static final String path3 = "http://twt.mpei.ru/mcs/Worksheets/rbtpp/tab3.xmcd";
-
     private HttpURLConnection httpConn;
     private String html;
     private final ArrayList<String> imageByTemperature = new ArrayList<>();
@@ -63,7 +59,7 @@ public class TWTService {
     }
 
     public Map<String, String> inAStateOfSaturationByTemperature(int temperature) throws IOException {
-        connection(path1);
+        connection(PathEnum.PATH_1.getPath());
         OutputStreamWriter writer = new OutputStreamWriter(httpConn.getOutputStream());
         //1029-Temp C-0,K-1,F-2,R-3    232=T
         writer.write("scrollX=0&scrollY=0&232=" + temperature + "&1029=0&948=6&949=2");
@@ -82,7 +78,7 @@ public class TWTService {
     }
 
     public Map<String, String> inAStateOfSaturationByPressure() throws IOException {
-        connection(path2);
+        connection(PathEnum.PATH_2.getPath());
         OutputStreamWriter writer = new OutputStreamWriter(httpConn.getOutputStream());
         //1179-0 МПа
         writer.write("scrollX=0&scrollY=0&844=1%2C01&1179=0&1180=6&1181=2");
@@ -156,14 +152,14 @@ public class TWTService {
     }
 
     //Загрузка фотографий в папку
-    private static void getImage(String src) throws IOException {
-        String destinationDirectory = "/Users/idrsv/Desktop/photos/";
-        try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(destinationDirectory + src.substring(src.lastIndexOf("/"))))) {
-            URL url = new URL(src);
-            InputStream inputStream = url.openStream();
-            for (int i; (i = inputStream.read()) != -1; ) {
-                outputStream.write(i);
-            }
-        }
-    }
+//    private static void getImage(String src) throws IOException {
+//        String destinationDirectory = "/Users/idrsv/Desktop/photos/";
+//        try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(destinationDirectory + src.substring(src.lastIndexOf("/"))))) {
+//            URL url = new URL(src);
+//            InputStream inputStream = url.openStream();
+//            for (int i; (i = inputStream.read()) != -1; ) {
+//                outputStream.write(i);
+//            }
+//        }
+//    }
 }

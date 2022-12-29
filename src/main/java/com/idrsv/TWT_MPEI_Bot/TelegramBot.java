@@ -1,8 +1,10 @@
 package com.idrsv.TWT_MPEI_Bot;
 
 import com.idrsv.TWT_MPEI_Bot.config.BotConfig;
+import com.idrsv.TWT_MPEI_Bot.constants.BotMessageEnum;
 import com.idrsv.TWT_MPEI_Bot.service.TWTService;
-import com.vdurmont.emoji.EmojiParser;
+import com.idrsv.TWT_MPEI_Bot.telegram.keyboards.CallbackKeyboard;
+import com.idrsv.TWT_MPEI_Bot.telegram.keyboards.ReplyKeyboardMaker;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -10,35 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import static java.lang.Math.toIntExact;
 
 @Slf4j
 @Component
 @AllArgsConstructor
 public class TelegramBot extends TelegramLongPollingBot {
 
-    private static final String TABLE_1_BUTTON = "Table 1 BUTTON";
-    private static final String TABLE_2_BUTTON = "Table 2 BUTTON";
-    //    private static final String TABLE_3_BUTTON = "Table 3 BUTTON";
-//    private static final String TABLE_4_BUTTON = "Table 4 BUTTON";
-//    private static final String TABLE_5_BUTTON = "Table 5 BUTTON";
-//    private static final String TABLE_6_BUTTON = "Table 6 BUTTON";
-//    private static final String TABLE_7_BUTTON = "Table 7 BUTTON";
-    @Autowired
     final BotConfig config;
-    @Autowired
-    private TWTService twtService;
-
+    private ReplyKeyboardMaker replyKeyboardMaker;
+    private CallbackKeyboard callbackKeyboard;
 
     @Override
     public String getBotUsername() {
@@ -59,70 +46,61 @@ public class TelegramBot extends TelegramLongPollingBot {
             switch (messageText) {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName(), update.getMessage().getChat().getLastName());
-                    prepareAndSendMessage(chatId, "Select a command in the menu bar " + EmojiParser.parseToUnicode(" :point_down:"));
                     break;
-                case "/tables":
-                    sendMessage(chatId, "Test");
+                case "Таблицы":
+                    execute(replyKeyboardMaker.getTableInlineKeyboard(chatId));
                     break;
-                case "/info":
-                    infoSendMessage(chatId);
+                case "Информация о таблицах":
+                    infoTableMessage(chatId);
+                    break;
+                case "Информация о проекте":
+                    infoProjectMessage(chatId);
                     break;
                 default:
-                    prepareAndSendMessage(chatId, "Sorry");
+                    execute(replyKeyboardMaker.getMainMenuKeyboard(chatId, BotMessageEnum.EXCEPTION_WHAT_THE_FUCK.getMessage()));
             }
-            // Обработка выпадающих кнопок
         } else if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData();
 //            long messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
             switch (callbackData) {
-                case TABLE_1_BUTTON:
-                    int temperatureByTable1 = 270;
-                    SendMessage message1 = new SendMessage();
-                    message1.setChatId(String.valueOf(chatId));
-                    message1.setText(twtService.inAStateOfSaturationByTemperature(temperatureByTable1).toString());
-                    System.out.println("Finished");
-                    executeMessage(message1);
+                case "Table 1 BUTTON":
+//                    String answer = "Вы выбрали 1 таблицу: В состоянии насыщения (по температуре)";
+//                    EditMessageText new_message = new EditMessageText();
+//                    new_message.setChatId(chatId);
+//                    new_message.setMessageId(toIntExact(messageId));
+//                    new_message.setText(answer);
+                    executeMessage(callbackKeyboard.getCallbackInAStateOfSaturationByTemperature(chatId));
+//                    execute(new_message);
                     break;
-                case TABLE_2_BUTTON:
-                    SendMessage message2 = new SendMessage();
-                    message2.setChatId(String.valueOf(chatId));
-                    message2.setText(twtService.inAStateOfSaturationByPressure().toString());
-                    System.out.println("Finished");
-                    executeMessage(message2);
+                case "Table 2 BUTTON":
+//                    String answer2 = "Вы выбрали 2 таблицу: В состоянии насыщения (по давлению)";
+//                    EditMessageText new_message2 = new EditMessageText();
+//                    new_message2.setChatId(chatId);
+//                    new_message2.setMessageId(toIntExact(messageId));
+//                    new_message2.setText(answer2);
+                    executeMessage(callbackKeyboard.getCallbackInAStateOfSaturationByPressure(chatId));
+//                    execute(new_message2);
                     break;
-                default:
-                    sendMessage(chatId, "Sorry");
             }
         }
     }
 
-
-    private void executeMessage(SendMessage sendMessage) {
-        try {
-            execute(sendMessage);
-        } catch (TelegramApiException e) {
-            log.error("Error occurred: " + e.getMessage());
-        }
-    }
-
-
-    private void infoSendMessage(long chatId) {
+    private void infoTableMessage(long chatId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("""
-                Таблица 1. В состоянии насыщения (по температуре)
-                Таблица 2. В состоянии насыщения (по давлению)
-                Таблица 3. В зависимости от T и p (скоро)
-                Таблица 4. В зависимости от p и h (скоро)
-                Таблица 5. В зависимости от p и s (скоро)
-                Таблица 6. В зависимости от h и s (скоро)
-                Таблица 7. В зависимости от T и h (скоро)
-                """);
+        message.setText(BotMessageEnum.INF_ABOUT_TABLE.getMessage());
         executeMessage(message);
     }
 
-    private void startCommandReceived(long chatId, String firstName, String lastName) {
+    private void infoProjectMessage(long chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(BotMessageEnum.INF_ABOUT_PROJECT.getMessage());
+        executeMessage(message);
+    }
+
+    private void startCommandReceived(long chatId, String firstName, String lastName) throws TelegramApiException {
         String answer;
         if (lastName == null) {
             lastName = " ";
@@ -131,48 +109,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             answer = "Hello, " + firstName + " " + lastName + "!" + '\n' + "Thank you for joining our bot!";
         }
         log.info("Replied to user " + firstName + " " + lastName + " " + chatId);
-        sendMessage(chatId, answer);
+        execute(replyKeyboardMaker.getMainMenuKeyboard(chatId, answer));
     }
 
-    private void sendMessage(long chatId, String textToSend) {
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(String.valueOf(chatId));
-        sendMessage.setText("Выберете таблицу из списка " + EmojiParser.parseToUnicode(" :point_down:") + "\n" + "Среднее время ожидания получения результатов ≈ 15 секунд");
-
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline1 = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline2 = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline3 = new ArrayList<>();
-
-        var tableButton1 = new InlineKeyboardButton();
-        tableButton1.setText("Таблица 1");
-        tableButton1.setCallbackData(TABLE_1_BUTTON);
-
-        var tableButton2 = new InlineKeyboardButton();
-        tableButton2.setText("Таблица 2");
-        tableButton2.setCallbackData(TABLE_2_BUTTON);
-
-
-        rowInline1.add(tableButton1);
-        rowInline1.add(tableButton2);
-
-
-        rowsInline.add(rowInline1);
-        rowsInline.add(rowInline2);
-        rowsInline.add(rowInline3);
-
-        inlineKeyboardMarkup.setKeyboard(rowsInline);
-
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-
-        executeMessage(sendMessage);
-    }
-
-    private void prepareAndSendMessage(long chatId, String textToSend) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(textToSend);
-        executeMessage(message);
+    private void executeMessage(SendMessage sendMessage) {
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred: " + e.getMessage());
+        }
     }
 }
