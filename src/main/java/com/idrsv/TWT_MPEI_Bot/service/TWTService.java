@@ -119,7 +119,6 @@ public class TWTService {
 //    }
 
     public void response(OutputStreamWriter writer, HttpURLConnection httpConn) throws IOException {
-        System.out.println("response");
         writer.flush();
         writer.close();
         httpConn.getOutputStream().close();
@@ -130,9 +129,7 @@ public class TWTService {
         html = s.hasNext() ? s.next() : "";
     }
 
-    // /Users/idrsv/Desktop/TWT_MPEI_Bot/
     public void connection(String path) {
-        System.out.println("connection");
         URL url;
         try {
             url = new URL(path);

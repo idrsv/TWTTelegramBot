@@ -2,21 +2,17 @@ package com.idrsv.TWT_MPEI_Bot;
 
 import com.idrsv.TWT_MPEI_Bot.config.BotConfig;
 import com.idrsv.TWT_MPEI_Bot.constants.BotMessageEnum;
-import com.idrsv.TWT_MPEI_Bot.service.TWTService;
+import com.idrsv.TWT_MPEI_Bot.constants.BotState;
 import com.idrsv.TWT_MPEI_Bot.telegram.keyboards.CallbackKeyboard;
 import com.idrsv.TWT_MPEI_Bot.telegram.keyboards.ReplyKeyboardMaker;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import static java.lang.Math.toIntExact;
 
 @Slf4j
 @Component
@@ -43,12 +39,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
+            BotState botState;
             switch (messageText) {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName(), update.getMessage().getChat().getLastName());
+                    botState = BotState.MAIN_MENU;
                     break;
                 case "Таблицы":
                     execute(replyKeyboardMaker.getTableInlineKeyboard(chatId));
+                    botState = BotState.ASK_TABLE;
                     break;
                 case "Информация о таблицах":
                     infoTableMessage(chatId);
